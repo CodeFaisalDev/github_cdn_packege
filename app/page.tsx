@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from "react";
+import { CDNAsset } from "@/github_cdn_package/src/types";
 
 interface LogEntry {
   id: string;
@@ -11,12 +12,12 @@ interface LogEntry {
 
 export default function Home() {
   const [file, setFile] = useState<File | null>(null);
-  const [rateLimit, setRateLimit] = useState<any>(null);
+  const [rateLimit, setRateLimit] = useState<{ tokens: number; percentage: number } | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [isFetching, setIsFetching] = useState(false);
   const [previewUrl, setPreviewUrl] = useState<string>("");
   const [mimeType, setMimeType] = useState<string>("");
-  const [assets, setAssets] = useState<any[]>([]);
+  const [assets, setAssets] = useState<CDNAsset[]>([]);
   const [isLoadingAssets, setIsLoadingAssets] = useState(false);
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [uploadedPath, setUploadedPath] = useState<string>("");
@@ -30,6 +31,7 @@ export default function Home() {
   useEffect(() => {
     fetchAssets();
     addLog("System initialized. Ready for CDN operations.", "info");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -56,7 +58,8 @@ export default function Home() {
         setAssets(data.assets);
         addLog(`Registry loaded. ${data.assets.length} assets mapped.`, "success");
       }
-    } catch (err) {
+    } catch (err: unknown) {
+      console.error(err);
       addLog("Failed to synchronize with asset registry.", "error");
     } finally {
       setIsLoadingAssets(false);
@@ -99,7 +102,7 @@ export default function Home() {
           const data = JSON.parse(line);
 
           if (data.type === "log") {
-            addLog(data.message, data.logType as any);
+            addLog(data.message, data.logType as LogEntry["type"]);
           } else if (data.type === "error") {
             addLog(`Upload Failed: ${data.message}`, "error");
             setIsUploading(false);
@@ -114,8 +117,9 @@ export default function Home() {
           }
         }
       }
-    } catch (err: any) {
-      addLog(`Critical Connection Error: ${err.message}`, "error");
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Unknown error";
+      addLog(`Critical Connection Error: ${message}`, "error");
     } finally {
       setIsUploading(false);
     }
@@ -162,7 +166,7 @@ export default function Home() {
           const data = JSON.parse(line);
 
           if (data.type === "log") {
-            addLog(data.message, data.logType as any);
+            addLog(data.message, data.logType as LogEntry["type"]);
           } else if (data.type === "error") {
             addLog(`Purge Failed: ${data.message}`, "error");
             setDeletingId(null);
@@ -173,8 +177,9 @@ export default function Home() {
           }
         }
       }
-    } catch (err: any) {
-      addLog(`Purge Interrupted: ${err.message}`, "error");
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Unknown error";
+      addLog(`Purge Interrupted: ${message}`, "error");
     } finally {
       setDeletingId(null);
     }
@@ -214,8 +219,9 @@ export default function Home() {
       addLog(`File Reconstructed. Total time: ${tt}s (TTFB optimized).`, "success");
 
       // Removed forced window scroll
-    } catch (err: any) {
-      addLog(`Streaming Interrupted: ${err.message}`, "error");
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Unknown error";
+      addLog(`Streaming Interrupted: ${message}`, "error");
     } finally {
       setIsFetching(false);
     }
@@ -234,8 +240,9 @@ export default function Home() {
       } else {
         addLog(`Deep Scan Failed: ${data.error}`, "error");
       }
-    } catch (err: any) {
-      addLog(`Scan Error: ${err.message}`, "error");
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : "Unknown error";
+      addLog(`Scan Error: ${message}`, "error");
     } finally {
       setIsLoadingAssets(false);
     }
@@ -323,7 +330,7 @@ export default function Home() {
                 <div className="p-4 bg-black/40 rounded-2xl border border-zinc-800/50">
                   <div className="flex justify-between items-center mb-2">
                     <span className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">GitHub API Tokens</span>
-                    <span className={`text-xs font-mono font-bold ${rateLimit?.tokens < 500 ? "text-red-400" : "text-emerald-400"}`}>
+                    <span className={`text-xs font-mono font-bold ${rateLimit && rateLimit.tokens < 500 ? "text-red-400" : "text-emerald-400"}`}>
                       {rateLimit?.tokens ?? 5000}
                     </span>
                   </div>
@@ -368,7 +375,7 @@ export default function Home() {
                     <p className="text-xs uppercase tracking-[0.3em]">Standby for input</p>
                   </div>
                 )}
-                {logs.map((log) => (
+                {logs.map((log: LogEntry) => (
                   <div key={log.id} className="text-[11px] leading-relaxed animate-in fade-in slide-in-from-left-2 duration-300">
                     <span className="text-zinc-600 mr-2">[{log.timestamp}]</span>
                     <span className={`
@@ -409,6 +416,7 @@ export default function Home() {
                 <div className="w-full max-w-2xl bg-black rounded-2xl overflow-hidden border border-zinc-800 shadow-2xl relative group/preview">
                   <div className="absolute inset-0 bg-emerald-500/5 opacity-0 group-hover/preview:opacity-100 transition-opacity pointer-events-none" />
                   {mimeType.startsWith("image/") ? (
+                    /* eslint-disable-next-line @next/next/no-img-element */
                     <img src={previewUrl} className="w-full h-auto" alt="Preview" />
                   ) : mimeType.startsWith("video/") ? (
                     <video controls className="w-full aspect-video">
@@ -471,7 +479,7 @@ export default function Home() {
             </div>
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {assets.map((asset) => (
+              {assets.map((asset: CDNAsset) => (
                 <div key={asset.id} className="group relative bg-zinc-900/20 border border-zinc-800/60 p-5 rounded-3xl hover:bg-zinc-900/40 hover:border-zinc-700 transition-all duration-300 shadow-xl overflow-hidden">
                   <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-blue-500/5 to-transparent pointer-events-none" />
 

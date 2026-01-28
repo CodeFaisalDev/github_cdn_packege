@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { GithubCDN } from "../../../../github_cdn_package/src/index";
 
 const cdn = new GithubCDN({
@@ -12,7 +12,8 @@ export async function POST() {
         // High-level SDK recon method
         const result = await cdn.sync();
         return NextResponse.json({ success: true, recoveredCount: result.recovered });
-    } catch (error: any) {
-        return NextResponse.json({ success: false, error: error.message }, { status: 500 });
+    } catch (error: unknown) {
+        const message = error instanceof Error ? error.message : "Unknown error";
+        return NextResponse.json({ success: false, error: message }, { status: 500 });
     }
 }

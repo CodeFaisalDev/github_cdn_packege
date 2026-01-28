@@ -21,15 +21,17 @@ export async function POST(req: NextRequest) {
             controller.enqueue(encoder.encode(JSON.stringify(log) + "\n"));
           });
           controller.close();
-        } catch (err: any) {
-          controller.enqueue(encoder.encode(JSON.stringify({ type: "error", message: err.message }) + "\n"));
+        } catch (err: unknown) {
+          const message = err instanceof Error ? err.message : "Unknown error";
+          controller.enqueue(encoder.encode(JSON.stringify({ type: "error", message: message }) + "\n"));
           controller.close();
         }
       }
     });
 
     return new Response(stream, { headers: { "Content-Type": "application/x-ndjson" } });
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message }, { status: 500 });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Unknown error";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
 }
