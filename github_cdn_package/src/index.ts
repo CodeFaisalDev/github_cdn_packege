@@ -38,7 +38,7 @@ export class GithubCDN {
     /**
      * Resolves all public URLs for a given asset.
      */
-    private resolveLinks(asset: { path: string; id: string }): CDNLinks {
+    public resolveLinks(asset: { path: string; id: string }): CDNLinks {
         const base = `https://cdn.jsdelivr.net/gh/${this.config.owner}/${this.config.repo}@${this.config.branch}/${asset.path}`;
         return {
             cdn: `${base}/manifest.json`,
@@ -110,8 +110,48 @@ export class GithubCDN {
         return true;
     }
 
+    async getRef(branch = this.config.branch): Promise<string> {
+        const ref = await this.request(`/git/refs/heads/${branch}`);
+        return ref.object.sha;
+    }
+
+    async createBlob(content: Buffer | Uint8Array | ArrayBuffer): Promise<string> {
+        const res = await this.request(`/git/blobs`, {
+            method: "POST",
+            body: JSON.stringify({
+                content: Buffer.from(content as any).toString("base64"),
+                encoding: "base64"
+            })
+        });
+        return res.sha;
+    }
+
+    async createTree(baseSha: string, items: { path: string, mode: string, type: string, sha: string }[]): Promise<string> {
+        const res = await this.request(`/git/trees`, {
+            method: "POST",
+            body: JSON.stringify({ base_tree: baseSha, tree: items })
+        });
+        return res.sha;
+    }
+
+    async createCommit(message: string, treeSha: string, parents: string[]): Promise<string> {
+        const res = await this.request(`/git/commits`, {
+            method: "POST",
+            body: JSON.stringify({ message, tree: treeSha, parents })
+        });
+        return res.sha;
+    }
+
+    async updateRef(commitSha: string, branch = this.config.branch): Promise<void> {
+        await this.request(`/git/refs/heads/${branch}`, {
+            method: "PATCH",
+            body: JSON.stringify({ sha: commitSha })
+        });
+    }
+
     /**
      * Universal Upload Method (Supports File, Blob, and Node Buffer).
+     * @deprecated For Vercel/Serverless environments, use the granular methods to avoid payload limits.
      */
     async upload(
         input: File | Blob | Buffer | { name: string; type: string; buffer: ArrayBuffer },

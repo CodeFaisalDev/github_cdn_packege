@@ -70,56 +70,85 @@ export default function Home() {
     if (!file) return;
     setIsUploading(true);
     scrollToConsole();
-    setLogs([]); // Clear for clean demo
-    addLog(`Initiating Research Upload for: ${file.name}`, "info");
+    setLogs([]);
+    addLog(`Initiating Chunked Upload for: ${file.name}`, "info");
     addLog(`File size: ${(file.size / 1024 / 1024).toFixed(2)} MB`, "info");
-    addLog("Stage 1: Inverting data stream into sequential chunks...", "process");
-
-    const formData = new FormData();
-    formData.append("file", file);
 
     try {
       const startTime = Date.now();
-      addLog("Stage 2: Pushing parallel blobs to GitHub Trees API (Batch: 10)...", "process");
 
-      const res = await fetch("/api/upload", { method: "POST", body: formData });
-      if (!res.body) throw new Error("No response body");
+      // Stage 1: Init
+      addLog("Stage 1: Bootstrapping upload session...", "process");
+      const initRes = await fetch("/api/upload/init");
+      if (!initRes.ok) throw new Error("Failed to initialize upload session");
+      const { headSha, uniqueId, pathPrefix, timestamp } = await initRes.json();
+      addLog(`Session ID: ${uniqueId.substring(0, 8)}`, "success");
 
-      const reader = res.body.getReader();
-      const decoder = new TextDecoder();
-      let buffer = "";
+      // Stage 2: Chunking
+      const CHUNK_SIZE = 4 * 1024 * 1024; // 4MB to stay safe under Vercel's 4.5MB limit
+      const totalChunks = Math.ceil(file.size / CHUNK_SIZE);
+      const chunkShas: string[] = [];
 
-      while (true) {
-        const { done, value } = await reader.read();
-        if (done) break;
+      addLog(`Stage 2: Fragmenting into ${totalChunks} chunks (4MB each)...`, "process");
 
-        buffer += decoder.decode(value, { stream: true });
-        const lines = buffer.split("\n");
-        buffer = lines.pop() || ""; // Keep the last partial line
+      for (let i = 0; i < totalChunks; i++) {
+        const start = i * CHUNK_SIZE;
+        const end = Math.min(start + CHUNK_SIZE, file.size);
+        const chunk = file.slice(start, end);
 
-        for (const line of lines) {
-          if (!line.trim()) continue;
-          const data = JSON.parse(line);
+        addLog(`Pushing chunk ${i + 1}/${totalChunks}...`, "process");
 
-          if (data.type === "log") {
-            addLog(data.message, data.logType as LogEntry["type"]);
-          } else if (data.type === "error") {
-            addLog(`Upload Failed: ${data.message}`, "error");
-            setIsUploading(false);
-            return;
-          } else if (data.type === "done") {
-            const elapsed = ((Date.now() - startTime) / 1000).toFixed(2);
-            const sha = data.commitSha ? data.commitSha.substring(0, 7) : "unknown";
-            addLog(`Stage 3: Atomic commit verified. Hash: ${sha}`, "success");
-            addLog(`Upload Completed in ${elapsed}s. Optimized throughput achieved.`, "success");
-            setUploadedPath(data.folderPath);
-            fetchAssets();
-          }
-        }
+        const formData = new FormData();
+        formData.append("chunk", chunk);
+
+        const chunkRes = await fetch("/api/upload", {
+          method: "POST",
+          body: formData
+        });
+
+        if (!chunkRes.ok) throw new Error(`Failed to upload chunk ${i + 1}`);
+        const { sha } = await chunkRes.json();
+        chunkShas.push(sha);
       }
+
+      // Stage 3: Finalize
+      addLog("Stage 3: Orchestrating atomic commit...", "process");
+      const manifest = {
+        id: uniqueId,
+        fileName: file.name,
+        uniqueId,
+        totalChunks,
+        chunkSize: CHUNK_SIZE,
+        totalSize: file.size,
+        mimeType: file.type || "application/octet-stream",
+        pathPrefix,
+        uploadedAt: timestamp,
+        optimized: true
+      };
+
+      const finalizeRes = await fetch("/api/upload/finalize", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          headSha,
+          chunks: chunkShas,
+          manifest,
+          pathPrefix
+        })
+      });
+
+      if (!finalizeRes.ok) throw new Error("Failed to finalize upload");
+      const { asset } = await finalizeRes.json();
+
+      const elapsed = ((Date.now() - startTime) / 1000).toFixed(2);
+      addLog(`Stage 4: Commit verified. Hash: ${asset.id.substring(0, 7)}`, "success");
+      addLog(`Upload Completed in ${elapsed}s. Vercel payload limits bypassed.`, "success");
+
+      setUploadedPath(pathPrefix);
+      fetchAssets();
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Unknown error";
-      addLog(`Critical Connection Error: ${message}`, "error");
+      addLog(`Critical Upload Error: ${message}`, "error");
     } finally {
       setIsUploading(false);
     }
