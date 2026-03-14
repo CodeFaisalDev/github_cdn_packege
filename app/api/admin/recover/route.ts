@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { GithubCDN } from "../../../../github_cdn_package/src/index";
 
+export const runtime = "edge";
+
 export async function POST() {
     try {
         const cdn = new GithubCDN({

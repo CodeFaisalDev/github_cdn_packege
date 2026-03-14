@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { GithubCDN } from "../../../github_cdn_package/src/index";
 
+export const runtime = "edge";
+
 export async function GET(req: NextRequest) {
   const cdn = new GithubCDN({
     token: process.env.GITHUB_TOKEN!,
