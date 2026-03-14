@@ -1,11 +1,24 @@
-// OpenNext Cloudflare adapter configuration
-import type { OpenNextConfig } from "@opennextjs/aws/types/open-next.js";
-
-const config = {
-  default: {},
+export default {
+  default: {
+    override: {
+      wrapper: "cloudflare-node",
+      converter: "edge",
+      proxyExternalRequest: "fetch",
+      incrementalCache: "dummy",
+      tagCache: "dummy",
+      queue: "dummy",
+    },
+  },
+  edgeExternals: ["node:crypto"],
   middleware: {
     external: true,
+    override: {
+      wrapper: "cloudflare-edge",
+      converter: "edge",
+      proxyExternalRequest: "fetch",
+      incrementalCache: "dummy",
+      tagCache: "dummy",
+      queue: "dummy",
+    },
   },
-} satisfies OpenNextConfig;
-
-export default config;
+};
