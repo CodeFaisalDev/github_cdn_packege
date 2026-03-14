@@ -1,10 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getRequestContext } from "@opennextjs/cloudflare";
+import { getCloudflareContext } from "@opennextjs/cloudflare";
 import { GithubCDN } from "../../../../github_cdn_package/src/index";
 
 export async function GET() {
     try {
-        const cloudflareEnv = (getRequestContext().env as unknown as Env);
+        const cloudflareEnv = (getCloudflareContext().env as unknown as Env);
         
         const token = cloudflareEnv.GITHUB_TOKEN || process.env.GITHUB_TOKEN;
         const owner = cloudflareEnv.GITHUB_OWNER || process.env.GITHUB_OWNER;
