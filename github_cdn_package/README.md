@@ -77,27 +77,29 @@ This package includes a pre-configured OpenNext setup to deploy your **entire Ne
 3. Select **"All zones from an account"** if prompted for Zone Resources. Keep other defaults.
 4. Click **Create Token** & **Copy the token** (shown only once)
 
-### Step 3 — GitHub Repository Secrets
-Add these to your repo: **Settings → Secrets and variables → Actions**:
+### Step 3 — Deploy via Cloudflare Pages
+1. Go to **Cloudflare Dashboard → Workers & Pages → Create**
+2. Select the **Pages** tab and click **Connect to Git**
+3. Select your `github_cdn` repository.
+4. Framework preset: **Next.js** (Cloudflare will automatically configure OpenNext for you).
+5. Click **Save and Deploy**.
 
-| Secret | Value |
-|:---|:---|
-| `CLOUDFLARE_API_TOKEN` | Token from Step 2 |
-| `CLOUDFLARE_ACCOUNT_ID` | From Cloudflare dashboard sidebar |
+> **Note:** The first deployment might take a few minutes as Cloudflare automatically sets up the OpenNext translation layer to run your app on their edge.
 
-### Step 4 — Add Worker Secrets
-In **Cloudflare Dashboard → Workers → `githubcdn` → Settings → Variables** (Note: do this after the first deployment finishes):
+### Step 4 — Add Environment Variables
+Once the deployment finishes (or while it's building):
+1. Go to your new Pages project → **Settings → Environment variables**
+2. Add your GitHub credentials:
 
-| Secret | Value |
+| Variable | Value |
 |:---|:---|
 | `GITHUB_TOKEN` | Your GitHub PAT |
 | `GITHUB_OWNER` | Your GitHub username |
 | `GITHUB_REPO` | Your repository name |
 
-### Step 5 — Deploy
-Push to the `main` branch. The included GitHub Action will automatically run `npm run deploy` to build via OpenNext and publish your full app to Cloudflare. 
+3. Trigger a **Retry deployment** so the new variables take effect.
 
-> **Important:** With full app deployment, you do **not** need to set `workerBaseUrl` in your `GithubCDN` config. Your existing `/api/fetch` route is already running at the edge!
+> **Important:** With full app deployment, you do **not** need to set `workerBaseUrl` in your `GithubCDN` config. Your existing `/api/fetch` route is already running natively at the edge!
 
 ---
 
