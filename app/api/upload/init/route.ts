@@ -1,26 +1,30 @@
 import { NextRequest, NextResponse } from "next/server";
+import { getRequestContext } from "@opennextjs/cloudflare";
 import { GithubCDN } from "../../../../github_cdn_package/src/index";
-
-// CDN client is initialized inside the request handler to ensure environment variables are loaded correctly in Cloudflare Workers.
 
 export async function GET() {
     try {
-        if (!process.env.GITHUB_TOKEN || !process.env.GITHUB_OWNER || !process.env.GITHUB_REPO) {
+        const cloudflareEnv = (getRequestContext().env as unknown as Env);
+        
+        const token = cloudflareEnv.GITHUB_TOKEN || process.env.GITHUB_TOKEN;
+        const owner = cloudflareEnv.GITHUB_OWNER || process.env.GITHUB_OWNER;
+        const repo = cloudflareEnv.GITHUB_REPO || process.env.GITHUB_REPO;
+
+        if (!token || !owner || !repo) {
             return NextResponse.json({ 
                 error: "Missing environment variables", 
                 details: {
-                    hasToken: !!process.env.GITHUB_TOKEN,
-                    hasOwner: !!process.env.GITHUB_OWNER,
-                    hasRepo: !!process.env.GITHUB_REPO,
-                    availableKeys: Object.keys(process.env).filter(k => k.includes("GITHUB") || k.includes("NEXT"))
+                    hasToken: !!token,
+                    hasOwner: !!owner,
+                    hasRepo: !!repo
                 }
             }, { status: 500 });
         }
 
         const cdn = new GithubCDN({
-            token: process.env.GITHUB_TOKEN,
-            owner: process.env.GITHUB_OWNER,
-            repo: process.env.GITHUB_REPO,
+            token,
+            owner,
+            repo,
         });
 
         const headSha = await cdn.getRef();
