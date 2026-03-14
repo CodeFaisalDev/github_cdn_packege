@@ -1,18 +1,12 @@
 import { NextResponse } from "next/server";
-import { getCloudflareContext } from "@opennextjs/cloudflare";
 import { GithubCDN } from "../../../../github_cdn_package/src/index";
 
 export async function POST() {
     try {
-        const cloudflareEnv = (getCloudflareContext().env as unknown as Env);
-        const token = cloudflareEnv.GITHUB_TOKEN || process.env.GITHUB_TOKEN;
-        const owner = cloudflareEnv.GITHUB_OWNER || process.env.GITHUB_OWNER;
-        const repo = cloudflareEnv.GITHUB_REPO || process.env.GITHUB_REPO;
-
         const cdn = new GithubCDN({
-            token: token!,
-            owner: owner!,
-            repo: repo!,
+            token: process.env.GITHUB_TOKEN!,
+            owner: process.env.GITHUB_OWNER!,
+            repo: process.env.GITHUB_REPO!,
         });
         // High-level SDK recon method
         const result = await cdn.sync();

@@ -1,14 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getCloudflareContext } from "@opennextjs/cloudflare";
 import { GithubCDN } from "../../../../github_cdn_package/src/index";
 
 export async function GET() {
     try {
-        const cloudflareEnv = (getCloudflareContext().env as unknown as Env);
-        
-        const token = cloudflareEnv.GITHUB_TOKEN || process.env.GITHUB_TOKEN;
-        const owner = cloudflareEnv.GITHUB_OWNER || process.env.GITHUB_OWNER;
-        const repo = cloudflareEnv.GITHUB_REPO || process.env.GITHUB_REPO;
+        const token = process.env.GITHUB_TOKEN;
+        const owner = process.env.GITHUB_OWNER;
+        const repo = process.env.GITHUB_REPO;
 
         if (!token || !owner || !repo) {
             return NextResponse.json({ 

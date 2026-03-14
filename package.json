@@ -5,11 +5,8 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "build:worker": "opennextjs-cloudflare build",
     "start": "next start",
-    "lint": "eslint",
-    "preview": "npm run build && opennextjs-cloudflare preview",
-    "deploy": "npm run build && opennextjs-cloudflare deploy"
+    "lint": "eslint"
   },
   "dependencies": {
     "@octokit/rest": "^22.0.1",

@@ -1,18 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getCloudflareContext } from "@opennextjs/cloudflare";
 import { GithubCDN } from "../../../github_cdn_package/src/index";
 
 export async function GET() {
     try {
-        const cloudflareEnv = (getCloudflareContext().env as unknown as Env);
-        const token = cloudflareEnv.GITHUB_TOKEN || process.env.GITHUB_TOKEN;
-        const owner = cloudflareEnv.GITHUB_OWNER || process.env.GITHUB_OWNER;
-        const repo = cloudflareEnv.GITHUB_REPO || process.env.GITHUB_REPO;
-
         const cdn = new GithubCDN({
-            token: token!,
-            owner: owner!,
-            repo: repo!,
+            token: process.env.GITHUB_TOKEN!,
+            owner: process.env.GITHUB_OWNER!,
+            repo: process.env.GITHUB_REPO!,
         });
 
         const assets = await cdn.list();
@@ -25,15 +19,10 @@ export async function GET() {
 
 export async function DELETE(req: NextRequest) {
     try {
-        const cloudflareEnv = (getCloudflareContext().env as unknown as Env);
-        const token = cloudflareEnv.GITHUB_TOKEN || process.env.GITHUB_TOKEN;
-        const owner = cloudflareEnv.GITHUB_OWNER || process.env.GITHUB_OWNER;
-        const repo = cloudflareEnv.GITHUB_REPO || process.env.GITHUB_REPO;
-
         const cdn = new GithubCDN({
-            token: token!,
-            owner: owner!,
-            repo: repo!,
+            token: process.env.GITHUB_TOKEN!,
+            owner: process.env.GITHUB_OWNER!,
+            repo: process.env.GITHUB_REPO!,
         });
         const { id, path } = await req.json();
         if (!id || !path) throw new Error("Missing ID or path");
