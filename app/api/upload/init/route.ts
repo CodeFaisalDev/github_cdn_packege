@@ -8,7 +8,8 @@ export async function GET() {
         if (!process.env.GITHUB_TOKEN || !process.env.GITHUB_OWNER || !process.env.GITHUB_REPO) {
             const availableKeys = Object.keys(process.env).sort();
             return NextResponse.json({ 
-                error: "Missing environment variables", 
+                error: "Missing environment variables",
+                v: "debug_3_vars_bound",
                 details: {
                     hasToken: !!process.env.GITHUB_TOKEN,
                     hasOwner: !!process.env.GITHUB_OWNER,
