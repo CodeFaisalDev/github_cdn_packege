@@ -6,17 +6,7 @@ import { GithubCDN } from "../../../../github_cdn_package/src/index";
 export async function GET() {
     try {
         if (!process.env.GITHUB_TOKEN || !process.env.GITHUB_OWNER || !process.env.GITHUB_REPO) {
-            const availableKeys = Object.keys(process.env).sort();
-            return NextResponse.json({ 
-                error: "Missing environment variables",
-                v: "debug_3_vars_bound",
-                details: {
-                    hasToken: !!process.env.GITHUB_TOKEN,
-                    hasOwner: !!process.env.GITHUB_OWNER,
-                    hasRepo: !!process.env.GITHUB_REPO,
-                    availableKeys: availableKeys.filter(k => k.includes("GITHUB") || k.includes("NEXT") || k.length < 20)
-                }
-            }, { status: 500 });
+            return NextResponse.json({ error: "Missing environment variables" }, { status: 500 });
         }
 
         const cdn = new GithubCDN({
