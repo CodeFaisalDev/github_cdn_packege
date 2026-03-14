@@ -40,12 +40,13 @@ export class GithubCDN {
      */
     public resolveLinks(asset: { path: string; id: string }): CDNLinks {
         const base = `https://cdn.jsdelivr.net/gh/${this.config.owner}/${this.config.repo}@${this.config.branch}/${asset.path}`;
-        return {
+        const links: CDNLinks = {
             cdn: `${base}/manifest.json`,
             fastly: `https://fastly.jsdelivr.net/gh/${this.config.owner}/${this.config.repo}@${this.config.branch}/${asset.path}/manifest.json`,
             raw: `https://raw.githubusercontent.com/${this.config.owner}/${this.config.repo}/${this.config.branch}/${asset.path}/manifest.json`,
             origin: `/api/fetch?file=${asset.path}` // Standard proxy convention
         };
+        return links;
     }
 
     /**
@@ -265,7 +266,6 @@ export class GithubCDN {
             `https://raw.githubusercontent.com/${this.config.owner}/${this.config.repo}/${this.config.branch}/${assetPath}`
         ];
 
-        emit("Retrieving manifest...", "info");
         const getManifest = async () => {
             try {
                 const res = await fetch(`${sources[0]}/manifest.json`, { cache: 'no-store' });

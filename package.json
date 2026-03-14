@@ -1,18 +1,23 @@
 {
-  "name": "github-cdn-packege",
+  "name": "githubcdn",
   "version": "0.1.0",
   "private": true,
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "preview": "opennextjs-cloudflare build && opennextjs-cloudflare preview",
+    "deploy": "opennextjs-cloudflare build && opennextjs-cloudflare deploy"
   },
   "dependencies": {
     "@octokit/rest": "^22.0.1",
     "next": "^15.4.10"
   },
   "devDependencies": {
+    "@eslint/eslintrc": "^3",
+    "@opennextjs/aws": "^3.9.16",
+    "@opennextjs/cloudflare": "^1.17.1",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
@@ -20,8 +25,8 @@
     "baseline-browser-mapping": "^2.9.19",
     "eslint": "^9",
     "eslint-config-next": "^15.1.6",
-    "@eslint/eslintrc": "^3",
     "tailwindcss": "^4",
-    "typescript": "^5"
+    "typescript": "^5",
+    "wrangler": "^4.73.0"
   }
 }

@@ -94,6 +94,12 @@ By implementing `Cache-Control: public, s-maxage=31536000, immutable`, the syste
 -   **GitHub API Sustainability**: One million requests per day consume only **1 API credit** (the initial cache-warm request). 
 -   **Zero-Compute State**: After the first request, the Next.js/SDK compute layer is completely bypassed. The asset delivery occurs entirely within Cloudflare's RAM/SSD layer, reducing carbon footprint and latency simultaneously.
 
+### 5.3 Edge Layer Optimization: The "Cache Everything" Rule
+Standard CDN behavior often bypasses dynamic paths (like `/api/`). To maintain high performance, the architecture utilizes **Cloudflare Cache Rules**:
+1.  **Path Targeting**: `(http.request.uri.path contains "/api/fetch")`
+2.  **Edge Cache TTL**: Set to **1 Year**. Since asset internal structure is immutable (versioned by UUID), cache invalidation is never required.
+3.  **Tiered Caching**: Leveraging Cloudflare's tiered cache architecture to ensure that even regional cache misses are resolved from a global upper-tier instead of hitting the Vercel origin.
+
 ---
 
 ## 6. Ethical and Security Considerations
